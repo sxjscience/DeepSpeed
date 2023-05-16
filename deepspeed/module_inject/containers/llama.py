@@ -50,39 +50,18 @@ class DS_LLAMAContainer(HybridGatedMLPContainer, HybridSplitQKVContainer, BaseTr
             ]
         ]
 
-    def fuse_lora(self):
-        """Fuse LoRA parameters"""
+    def get_lora_matched_pair(self):
         up_proj_lora, gate_proj_lora, down_proj_lora, q_lora, k_lora, v_lora, out_lora = self.get_lora_params()
-
-        for maybe_lora_param, param in [(up_proj_lora, self.inter_up_w),
-                                        (gate_proj_lora, self.inter_gate_w),
-                                        (down_proj_lora, self._4hh_w),
-                                        (out_lora, self.dense_w),
-                                        (q_lora, self.qw),
-                                        (k_lora, self.kw),
-                                        (v_lora, self.vw)]:
-            if len(maybe_lora_param) == 3:
-                lora_right_weight, \
-                lora_left_weight, \
-                lora_scaling = maybe_lora_param
-                param.data += lora_scaling * torch.matmul(lora_left_weight.t(), lora_right_weight.t())
-
-    def unfuse_lora(self):
-        """Unfuse LoRA parameters"""
-        up_proj_lora, gate_proj_lora, down_proj_lora, q_lora, k_lora, v_lora, out_lora = self.get_lora_params()
-
-        for maybe_lora_param, param in [(up_proj_lora, self.inter_up_w),
-                                        (gate_proj_lora, self.inter_gate_w),
-                                        (down_proj_lora, self._4hh_w),
-                                        (out_lora, self.dense_w),
-                                        (q_lora, self.qw),
-                                        (k_lora, self.kw),
-                                        (v_lora, self.vw)]:
-            if len(maybe_lora_param) == 3:
-                lora_right_weight, \
-                lora_left_weight, \
-                lora_scaling = maybe_lora_param
-                param.data -= lora_scaling * torch.matmul(lora_left_weight.t(), lora_right_weight.t())
+        ret = [
+            (up_proj_lora, self.inter_up_w),
+            (gate_proj_lora, self.inter_gate_w),
+            (down_proj_lora, self._4hh_w),
+            (out_lora, self.dense_w),
+            (q_lora, self.qw),
+            (k_lora, self.kw),
+            (v_lora, self.vw)
+        ]
+        return ret
 
     def set_q_k_v(self):
         """

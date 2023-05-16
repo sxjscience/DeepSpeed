@@ -55,41 +55,17 @@ class DS_OPTContainer(MetaTensorContainer, HybridSplitQKVContainer, BaseTransfor
         self.vw = self.policy.client_module.self_attn.v_proj.weight
         self.vb = self.policy.client_module.self_attn.v_proj.bias
 
-    def fuse_lora(self):
-        """Fuse LoRA parameters into the inference parameters"""
+    def get_lora_matched_pair(self):
         fc1_lora, fc2_lora, q_lora, k_lora, v_lora, out_lora = self.get_lora_params()
-
-        for maybe_lora_param, param in [(fc1_lora, self._h4h_w),
-                                        (fc2_lora, self._4hh_w),
-                                        (out_lora, self.dense_w),
-                                        (q_lora, self.qw),
-                                        (k_lora, self.kw),
-                                        (v_lora, self.vw)]:
-            if len(maybe_lora_param) == 3:
-                lora_right_weight, \
-                lora_left_weight, \
-                lora_scaling = maybe_lora_param
-                param.data += lora_scaling * torch.matmul(lora_left_weight.t(), lora_right_weight.t())
-
-
-    def unfuse_lora(self):
-        """Unfuse LoRA parameters from the inference parameters"""
-        fc1_w, _, fc2_w, _ = self.get_mlp_params()
-
-        fc1_lora, fc2_lora, q_lora, k_lora, v_lora, out_lora = self.get_lora_params()
-
-        for maybe_lora_param, param in [(fc1_lora, self._h4h_w),
-                                        (fc2_lora, self._4hh_w),
-                                        (out_lora, self.dense_w),
-                                        (q_lora, self.qw),
-                                        (k_lora, self.kw),
-                                        (v_lora, self.vw)]:
-            if len(maybe_lora_param) == 3:
-                lora_right_weight, \
-                lora_left_weight, \
-                lora_scaling = maybe_lora_param
-                param.data -= lora_scaling * torch.matmul(lora_left_weight.t(), lora_right_weight.t())
-
+        ret = [
+            (fc1_lora, self._h4h_w),
+            (fc2_lora, self._4hh_w),
+            (out_lora, self.dense_w),
+            (q_lora, self.qw),
+            (k_lora, self.kw),
+            (v_lora, self.vw)
+        ]
+        return ret
 
     def load_params(self, module, sd, weight_quantizer, mp_replace, prefix):
         param_names = (
