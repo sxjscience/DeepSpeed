@@ -55,6 +55,17 @@ class HybridEngineContainer(ABC):
         """
         raise NotImplementedError("A set_lora_params() function must be defined for the relevant parameters.")
 
+    @abstractmethod
+    def fuse_lora(self):
+        """Fuse the LoRA parameters for the module. The fused parameters will be used in the inference call."""
+        raise NotImplementedError("A fuse_lora() function must be defined for the relevant parameters.")
+    
+    @abstractmethod
+    def unfuse_lora(self):
+        """Unfuse the LoRA parameters for the module. Need to unfuse before running the training step."""
+        raise NotImplementedError("A unfuse_lora() function must be defined for the relevant parameters.") 
+
+
     def apply_tensor_parallelism(self, mp_replace, reversed_dim=False):
         """
         Add support for reversed dim in tensor parallelism. If necessary, override
